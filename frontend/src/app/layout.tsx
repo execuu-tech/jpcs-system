@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import ParallaxWrapper from "@/src/components/ParallaxWrapper";
+import Header from "@/src/components/layout/Header";
+import Footer from "@/src/components/layout/Footer";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -25,9 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-black`}>
+          <ParallaxWrapper>
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </ParallaxWrapper>
       </body>
     </html>
   );
