@@ -20,9 +20,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from members.views import MemberViewSet
+from attendance.views import EventViewSet, AttendanceViewSet
 
 router = DefaultRouter()
 router.register(r'members', MemberViewSet, basename='member')
+router.register(r'events', EventViewSet, basename='event')
+router.register(r'attendance', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -34,6 +34,9 @@ export default async function Members() {
                     <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">#</th>
                     <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">Name</th>
                     <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">Student Number</th>
+                    <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">Program</th>
+                    <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">Year</th>
+                    <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">Contact No.</th>
                     <th className="px-4 sm:px-6 py-4 text-left font-semibold text-sm sm:text-base">QR Code</th>
                   </tr>
                 </thead>
@@ -54,6 +57,21 @@ export default async function Members() {
                       <td className="px-4 sm:px-6 py-4 text-gray-600 text-sm sm:text-base">
                         <span className="bg-gray-100 px-2 py-1 rounded-md text-xs sm:text-sm font-mono">
                           {m.studentNumber}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-gray-600 text-sm sm:text-base">
+                        <span className="bg-gray-100 px-2 py-1 rounded-md text-xs sm:text-sm font-mono">
+                          {m.program || "N/A"}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-gray-600 text-sm sm:text-base">
+                        <span className="bg-gray-100 px-2 py-1 rounded-md text-xs sm:text-sm font-mono">
+                          {m.yearLevel || "N/A"}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-gray-600 text-sm sm:text-base">
+                        <span className="bg-gray-100 px-2 py-1 rounded-md text-xs sm:text-sm font-mono">
+                          {m.contactNumber || "N/A"}
                         </span>
                       </td>
                       <td className="px-4 sm:px-6 py-4">
