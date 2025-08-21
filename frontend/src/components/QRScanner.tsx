@@ -8,9 +8,11 @@ import {
 interface QRScannerProps {
     onScan: (result: string) => void;
     onClose: () => void;
+    eventName?: string;
+    section?: "morning" | "afternoon" | "night";
 }
 
-export default function QRScanner({ onScan, onClose }: QRScannerProps) {
+export default function QRScanner({ onScan, onClose, eventName, section }: QRScannerProps) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [error, setError] = useState<string | null>(null);
     const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
@@ -68,7 +70,6 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
             if (codeReaderRef.current) {
                 codeReaderRef.current.decodeFromVideoDevice(null, videoRef.current, () => { });
             }
-            // 🔴 stop the physical camera completely
             if (videoRef.current?.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach((track) => track.stop());
@@ -78,7 +79,6 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
     }, [onScan, isMobile]);
 
     const handleClose = () => {
-        // ensure cleanup happens
         if (videoRef.current?.srcObject) {
             const stream = videoRef.current.srcObject as MediaStream;
             stream.getTracks().forEach((track) => track.stop());
@@ -88,7 +88,15 @@ export default function QRScanner({ onScan, onClose }: QRScannerProps) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center z-50 p-4">
+            {/* Event Name & Section */}
+            {eventName && section && (
+                <div className="mb-4 text-center text-white">
+                    <h2 className="text-xl font-bold">{eventName}</h2>
+                    <p className="text-lg capitalize">{section} section</p>
+                </div>
+            )}
+
             <video
                 ref={videoRef}
                 className="w-full max-w-md rounded-lg border-4 border-white shadow-lg"

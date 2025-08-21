@@ -1,8 +1,41 @@
-// lib/api.ts  
+// lib/api.ts
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({})); // parse JSON or fallback
+  if (!res.ok) {
+    throw { status: res.status, data }; // normalized error
+  }
+  return data;
+}
 
 export async function apiGet(path: string) {
   const url = `${process.env.NEXT_PUBLIC_API_URL}${path}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
-  return res.json();
+  const res = await fetch(url, { cache: "no-store" });
+  return handleResponse(res);
+}
+
+export async function apiPost(path: string, body: any) {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function apiPut(path: string, body: any) {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+  const res = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return handleResponse(res);
+}
+
+export async function apiDelete(path: string) {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}${path}`;
+  const res = await fetch(url, { method: "DELETE" });
+  await handleResponse(res);
+  return true;
 }

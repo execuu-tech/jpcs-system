@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 
 interface Event {
     id: number;
@@ -27,12 +28,17 @@ export default function AttendancePage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [attendees, setAttendees] = useState<Attendance[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
-    const [selectedSection, setSelectedSection] = useState<'morning' | 'afternoon' | 'night' | null>(null);
+    const [selectedSection, setSelectedSection] = useState<"morning" | "afternoon" | "night" | null>(null);
     const [scanning, setScanning] = useState(false);
+
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
+    const [tempScanEvent, setTempScanEvent] = useState<Event | null>(null);
+
+    const eventName = `Event name: ${tempScanEvent?.name}`;
 
     const [formData, setFormData] = useState({
         name: "",
@@ -44,10 +50,11 @@ export default function AttendancePage() {
     const [editingEvent, setEditingEvent] = useState<Event | null>(null);
     const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
 
+    // Load events
     useEffect(() => {
-        fetch("http://localhost:8080/api/events/")
-            .then((res) => res.json())
-            .then(setEvents);
+        apiGet("/attendance/events")
+            .then(setEvents)
+            .catch((err) => console.error("Failed to load events:", err));
     }, []);
 
     const [showAttendees, setShowAttendees] = useState(false);
@@ -65,15 +72,11 @@ export default function AttendancePage() {
         }
     };
 
-    const fetchAttendance = (eventId: number, section?: 'morning' | 'afternoon' | 'night') => {
-
-        setSelectedSection(section);
-
-        let url = `http://localhost:8080/api/attendance/?event_id=${eventId}&section=${section}`;
-
-        fetch(url)
-            .then((res) => res.json())
-            .then(setAttendees);
+    const fetchAttendance = (eventId: number, section?: "morning" | "afternoon" | "night") => {
+        setSelectedSection(section ?? null);
+        apiGet(`/attendance/attendance/list?event_id=${eventId}&section=${section}`)
+            .then(setAttendees)
+            .catch((err) => console.error("Failed to load attendance:", err));
     };
 
     const handleScan = async (qr_token: string) => {
@@ -81,98 +84,73 @@ export default function AttendancePage() {
             toast.error("Please select a section first");
             return;
         }
-
         try {
-            const res = await fetch("http://localhost:8080/api/attendance/scan/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    qr_token,
-                    event_id: selectedEvent,
-                    section: selectedSection,
-                }),
+            await apiPost("/attendance/attendance/scan", {
+                qr_token,
+                event_id: selectedEvent,
+                section: selectedSection,
             });
-
-            const data = await res.json();
-
-            if (res.status === 201) {
-                fetchAttendance(selectedEvent, selectedSection);
-                toast.success(`Attendance marked for ${selectedSection}!`);
-            } else if (res.status === 200 && data.message === "Already scanned") {
+            fetchAttendance(selectedEvent, selectedSection);
+            toast.success(`Attendance marked for ${selectedSection}!`);
+        } catch (err: any) {
+            if (err.status === 400 && err.data?.detail === "Already scanned") {
                 toast("Member is already marked present for this section!", { icon: "⚠️" });
             } else {
-                toast.error("Error: " + (data.error || "Failed to mark attendance!"));
+                console.error(err);
+                toast.error("Failed to mark attendance.");
             }
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to mark attendance.");
         }
+    };
+
+    // Open section selection modal
+    const openSectionModal = (event: Event) => {
+        setTempScanEvent(event);
+        setIsSectionModalOpen(true);
+    };
+
+    const startScan = (section: "morning" | "afternoon" | "night") => {
+        if (tempScanEvent) {
+            setSelectedEvent(tempScanEvent.id);
+            setSelectedSection(section);
+            setScanning(true);
+        }
+        setIsSectionModalOpen(false);
     };
 
     const handleAddEvent = async () => {
         if (!formData.name || !formData.date) return;
-
         try {
-            const res = await fetch("http://localhost:8080/api/events/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-
-            if (res.ok) {
-                const newEvent = await res.json();
-                setEvents((prev) => [...prev, newEvent]);
-                setIsAddModalOpen(false);
-                setFormData({
-                    name: "",
-                    date: "",
-                    has_morning: false,
-                    has_afternoon: false,
-                    has_night: false,
-                });
-            } else alert("Error adding event.");
+            const newEvent = await apiPost("/attendance/events", formData);
+            setEvents((prev) => [...prev, newEvent]);
+            setIsAddModalOpen(false);
+            setFormData({ name: "", date: "", has_morning: false, has_afternoon: false, has_night: false });
         } catch (err) {
             console.error(err);
-            alert("Failed to add event.");
+            toast.error("Failed to add event.");
         }
     };
 
     const handleEditEvent = async () => {
         if (!editingEvent) return;
-
         try {
-            const res = await fetch(`http://localhost:8080/api/events/${editingEvent.id}/`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-
-            if (res.ok) {
-                const updated = await res.json();
-                setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
-                setIsEditModalOpen(false);
-            } else alert("Error updating event.");
+            const updated = await apiPut(`/attendance/events/${editingEvent.id}`, formData);
+            setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+            setIsEditModalOpen(false);
         } catch (err) {
             console.error(err);
-            alert("Failed to update event.");
+            toast.error("Failed to update event.");
         }
     };
 
     const handleDeleteEvent = async () => {
         if (!deletingEvent) return;
-
         try {
-            const res = await fetch(`http://localhost:8080/api/events/${deletingEvent.id}/`, {
-                method: "DELETE",
-            });
-
-            if (res.ok) {
-                setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
-                setIsDeleteModalOpen(false);
-            } else alert("Error deleting event.");
+            await apiDelete(`/attendance/events/${deletingEvent.id}`);
+            setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
+            setIsDeleteModalOpen(false);
         } catch (err) {
             console.error(err);
-            alert("Failed to delete event.");
+            toast.error("Failed to delete event.");
         }
     };
 
@@ -184,12 +162,8 @@ export default function AttendancePage() {
             <section className="relative w-full h-[40vh] bg-black text-white flex flex-col justify-center items-center overflow-hidden">
                 <img src="/JPCS-COVER.png" alt="JPCS Cover" className="absolute inset-0 w-full h-full object-cover" />
                 <div className="relative z-10 bg-black/30 p-6 sm:p-10 rounded-xl text-center max-w-[90%] sm:max-w-2xl mx-auto">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">
-                        Attendance Tracking
-                    </h1>
-                    <p className="text-base sm:text-lg md:text-xl">
-                        Manage events, scan members, and view attendance records
-                    </p>
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">Attendance Tracking</h1>
+                    <p className="text-base sm:text-lg md:text-xl">Manage events, scan members, and view attendance records</p>
                 </div>
             </section>
 
@@ -225,7 +199,7 @@ export default function AttendancePage() {
                                                     {selectedEvent === event.id && showAttendees ? "Hide Attendees" : "View Attendees"}
                                                 </Button>
                                                 <Button
-                                                    onClick={() => { setSelectedEvent(event.id); setScanning(true); }}
+                                                    onClick={() => openSectionModal(event)}
                                                     className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
                                                 >
                                                     Scan QR
@@ -254,8 +228,6 @@ export default function AttendancePage() {
                     {selectedEvent && (
                         <div className="mt-12">
                             <h2 className="text-2xl font-bold mb-2">Attendees</h2>
-
-                            {/* Section Buttons */}
                             <div className="flex gap-2 mb-2">
                                 {currentEvent?.has_morning && (
                                     <Button
@@ -282,14 +254,9 @@ export default function AttendancePage() {
                                     </Button>
                                 )}
                             </div>
-
-                            {/* Selected Section Label */}
                             {selectedSection && (
-                                <p className="text-gray-700 mb-4">
-                                    Viewing attendance for: <b>{selectedSection}</b> section
-                                </p>
+                                <p className="text-gray-700 mb-4">Viewing attendance for: <b>{selectedSection}</b> section</p>
                             )}
-
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-xl overflow-hidden">
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full border-collapse text-sm">
@@ -307,13 +274,9 @@ export default function AttendancePage() {
                                                 <tr key={a.id} className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200">
                                                     <td className="px-4 sm:px-6 py-4 text-gray-800">{a.member?.yearLevel}</td>
                                                     <td className="px-4 sm:px-6 py-4 text-gray-800">{a.member?.program}</td>
-                                                    <td className="px-4 sm:px-6 py-4 font-medium text-gray-900">
-                                                        {a.member?.lastName}, {a.member?.firstName} {a.member?.middleName}
-                                                    </td>
+                                                    <td className="px-4 sm:px-6 py-4 font-medium text-gray-900">{a.member?.lastName}, {a.member?.firstName} {a.member?.middleName}</td>
                                                     <td className="px-4 sm:px-6 py-4 text-gray-600">{a.status}</td>
-                                                    <td className="px-4 sm:px-6 py-4 text-gray-600">
-                                                        {format(new Date(a.timestamp), "MM/dd/yyyy hh:mm a")}
-                                                    </td>
+                                                    <td className="px-4 sm:px-6 py-4 text-gray-600">{format(new Date(a.timestamp), "MM/dd/yyyy hh:mm a")}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -322,11 +285,32 @@ export default function AttendancePage() {
                             </div>
                         </div>
                     )}
-
                 </div>
             </section>
 
-            {scanning && <QRScanner onScan={handleScan} onClose={() => setScanning(false)} />}
+            {/* QR Scanner Overlay */}
+            {scanning && tempScanEvent && selectedSection && (
+                <QRScanner
+                    onScan={handleScan}
+                    onClose={() => setScanning(false)}
+                    eventName={`Event: ${tempScanEvent?.name}`}
+                    section={selectedSection}
+                />
+            )}
+
+            {/* Section selection modal */}
+            <Dialog open={isSectionModalOpen} onOpenChange={setIsSectionModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Select Section for {tempScanEvent?.name}</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex gap-4 mt-4 justify-center">
+                        {tempScanEvent?.has_morning && <Button onClick={() => startScan("morning")}>Morning</Button>}
+                        {tempScanEvent?.has_afternoon && <Button onClick={() => startScan("afternoon")}>Afternoon</Button>}
+                        {tempScanEvent?.has_night && <Button onClick={() => startScan("night")}>Night</Button>}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Modals */}
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

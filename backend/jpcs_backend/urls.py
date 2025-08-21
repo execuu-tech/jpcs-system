@@ -15,12 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from members.views import MemberViewSet
 from attendance.views import EventViewSet, AttendanceViewSet
+from .api import api
 
 router = DefaultRouter()
 router.register(r'members', MemberViewSet, basename='member')
@@ -29,6 +30,8 @@ router.register(r'attendance', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
+    path('api/', api.urls),
     path('health/', lambda r: __import__('django.http').http.HttpResponse('ok')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+

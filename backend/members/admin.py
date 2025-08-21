@@ -4,7 +4,7 @@ from .models import Members
 # Register your models here.
 @admin.register(Members)
 class MembersAdmin(admin.ModelAdmin):
-    list_display = ('studentNumber', 'firstName', 'lastName', 'yearLevel', 'program', 'cspcEmail', 'contactNumber', 'position')
+    list_display = ('studentNumber', 'firstName', 'lastName', 'yearLevel', 'program', 'cspcEmail', 'contactNumber', 'position', 'temp_password')
     search_fields = ('studentNumber', 'firstName', 'lastName', 'cspcEmail')
     list_filter = ('program', 'yearLevel', 'position')
     ordering = ('lastName', 'firstName')
