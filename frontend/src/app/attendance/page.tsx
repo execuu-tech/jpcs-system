@@ -1,9 +1,24 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import QRScanner from "@/src/components/QRScanner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
@@ -25,20 +40,26 @@ interface Attendance {
 }
 
 export default function AttendancePage() {
+    const router = useRouter();
+
+    // ---------------- Auth ----------------
+    const [authenticated, setAuthenticated] = useState(false);
+    const [loadingAuth, setLoadingAuth] = useState(true);
+
+    // ---------------- State ----------------
     const [events, setEvents] = useState<Event[]>([]);
     const [attendees, setAttendees] = useState<Attendance[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<number | null>(null);
-    const [selectedSection, setSelectedSection] = useState<"morning" | "afternoon" | "night" | null>(null);
+    const [selectedSection, setSelectedSection] = useState<
+        "morning" | "afternoon" | "night" | null
+    >(null);
     const [scanning, setScanning] = useState(false);
-
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
     const [tempScanEvent, setTempScanEvent] = useState<Event | null>(null);
-
-    const eventName = `Event name: ${tempScanEvent?.name}`;
 
     const [formData, setFormData] = useState({
         name: "",
@@ -50,15 +71,49 @@ export default function AttendancePage() {
     const [editingEvent, setEditingEvent] = useState<Event | null>(null);
     const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
 
-    // Load events
-    useEffect(() => {
-        apiGet("/attendance/events")
-            .then(setEvents)
-            .catch((err) => console.error("Failed to load events:", err));
-    }, []);
-
     const [showAttendees, setShowAttendees] = useState(false);
 
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filterProgram, setFilterProgram] = useState<string | null>(null);
+    const [filterYear, setFilterYear] = useState<string | null>(null);
+
+    // ---------------- Auth Check ----------------
+    useEffect(() => {
+        async function checkAuth() {
+            try {
+                const res = await fetch("/api/check-auth");
+                const data = await res.json();
+                if (data.authenticated) {
+                    setAuthenticated(true);
+                } else {
+                    router.replace("/login");
+                    toast.error("You must be logged in to access this page", {
+                        duration: 2000,
+                    });
+                }
+            } catch (err) {
+                console.error("Auth check failed", err);
+                router.replace("/login");
+                toast.error("You must be logged in to access this page", {
+                    duration: 2000,
+                });
+            } finally {
+                setLoadingAuth(false);
+            }
+        }
+        checkAuth();
+    }, [router]);
+
+    // ---------------- Fetch Events ----------------
+    useEffect(() => {
+        if (authenticated) {
+            apiGet("/attendance/events")
+                .then(setEvents)
+                .catch((err) => console.error("Failed to load events:", err));
+        }
+    }, [authenticated]);
+
+    // ---------------- Handlers ----------------
     const toggleAttendees = (eventId: number) => {
         if (selectedEvent === eventId && showAttendees) {
             setShowAttendees(false);
@@ -72,7 +127,10 @@ export default function AttendancePage() {
         }
     };
 
-    const fetchAttendance = (eventId: number, section?: "morning" | "afternoon" | "night") => {
+    const fetchAttendance = (
+        eventId: number,
+        section?: "morning" | "afternoon" | "night"
+    ) => {
         setSelectedSection(section ?? null);
         apiGet(`/attendance/attendance/list?event_id=${eventId}&section=${section}`)
             .then(setAttendees)
@@ -94,7 +152,9 @@ export default function AttendancePage() {
             toast.success(`Attendance marked for ${selectedSection}!`);
         } catch (err: any) {
             if (err.status === 400 && err.data?.detail === "Already scanned") {
-                toast("Member is already marked present for this section!", { icon: "⚠️" });
+                toast("Member is already marked present for this section!", {
+                    icon: "⚠️",
+                });
             } else {
                 console.error(err);
                 toast.error("Failed to mark attendance.");
@@ -102,7 +162,6 @@ export default function AttendancePage() {
         }
     };
 
-    // Open section selection modal
     const openSectionModal = (event: Event) => {
         setTempScanEvent(event);
         setIsSectionModalOpen(true);
@@ -123,7 +182,13 @@ export default function AttendancePage() {
             const newEvent = await apiPost("/attendance/events", formData);
             setEvents((prev) => [...prev, newEvent]);
             setIsAddModalOpen(false);
-            setFormData({ name: "", date: "", has_morning: false, has_afternoon: false, has_night: false });
+            setFormData({
+                name: "",
+                date: "",
+                has_morning: false,
+                has_afternoon: false,
+                has_night: false,
+            });
         } catch (err) {
             console.error(err);
             toast.error("Failed to add event.");
@@ -133,7 +198,10 @@ export default function AttendancePage() {
     const handleEditEvent = async () => {
         if (!editingEvent) return;
         try {
-            const updated = await apiPut(`/attendance/events/${editingEvent.id}`, formData);
+            const updated = await apiPut(
+                `/attendance/events/${editingEvent.id}`,
+                formData
+            );
             setEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
             setIsEditModalOpen(false);
         } catch (err) {
@@ -154,49 +222,115 @@ export default function AttendancePage() {
         }
     };
 
+    // ---------------- Filters ----------------
+    const filteredAttendees = attendees.filter((a) => {
+        const matchesSearch = `${a.member?.lastName} ${a.member?.firstName} ${a.member?.middleName}`
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase());
+
+        const matchesProgram = filterProgram
+            ? a.member?.program === filterProgram
+            : true;
+
+        const matchesYear = filterYear
+            ? String(a.member?.yearLevel) === filterYear
+            : true;
+
+        return matchesSearch && matchesProgram && matchesYear;
+    });
+
+    const uniquePrograms: string[] = Array.from(
+        new Set(
+            attendees.map((a) => a.member?.program).filter((p): p is string => !!p)
+        )
+    );
+
+    const uniqueYears: string[] = Array.from(
+        new Set(
+            attendees
+                .map((a) => a.member?.yearLevel)
+                .filter((y): y is number | string => !!y)
+        )
+    ).map(String);
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setFilterProgram(null);
+        setFilterYear(null);
+    };
+
     const currentEvent = events.find((e) => e.id === selectedEvent);
+
+    // ---------------- Guard ----------------
+    if (loadingAuth) return null;
+    if (!authenticated) return null;
 
     return (
         <main className="flex flex-col min-h-screen">
-            {/* Hero Section */}
+            {/* Hero */}
             <section className="relative w-full h-[40vh] bg-black text-white flex flex-col justify-center items-center overflow-hidden">
-                <img src="/JPCS-COVER.png" alt="JPCS Cover" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="relative z-10 bg-black/30 p-6 sm:p-10 rounded-xl text-center max-w-[90%] sm:max-w-2xl mx-auto">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 leading-tight">Attendance Tracking</h1>
-                    <p className="text-base sm:text-lg md:text-xl">Manage events, scan members, and view attendance records</p>
+                <img
+                    src="/JPCS-COVER.png"
+                    alt="JPCS Cover"
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="relative z-10 bg-black/40 p-4 sm:p-8 md:p-10 rounded-xl text-center max-w-[95%] sm:max-w-2xl mx-auto">
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-3 leading-tight">
+                        Attendance Tracking
+                    </h1>
+                    <p className="text-sm sm:text-lg md:text-xl">
+                        Manage events, scan members, and view attendance records
+                    </p>
                 </div>
             </section>
 
-            {/* Events Table */}
-            <section className="bg-white text-gray-800 px-4 sm:px-6 lg:px-8 py-16">
+            {/* EVENTS Table */}
+            <section className="bg-white text-gray-800 px-3 sm:px-6 lg:px-8 py-10 sm:py-16">
                 <div className="max-w-6xl mx-auto">
                     <div className="flex justify-end mb-6">
-                        <Button onClick={() => setIsAddModalOpen(true)} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow transition">
+                        <Button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow transition"
+                        >
                             ➕ Add Event
                         </Button>
                     </div>
 
                     <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-xl overflow-hidden">
-                        <div className="overflow-x-auto">
+                        {/* DESKTOP/TABLET Responsive Table */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="min-w-full border-collapse text-sm">
                                 <thead>
                                     <tr className="bg-gradient-to-r from-red-800 to-red-900 text-white">
-                                        <th className="px-4 sm:px-6 py-4 text-left font-semibold">Event Name</th>
-                                        <th className="px-4 sm:px-6 py-4 text-left font-semibold">Date</th>
-                                        <th className="px-4 sm:px-6 py-4 text-left font-semibold">Actions</th>
+                                        <th className="px-6 py-4 text-left font-semibold">
+                                            Event Name
+                                        </th>
+                                        <th className="px-6 py-4 text-left font-semibold">Date</th>
+                                        <th className="px-6 py-4 text-left font-semibold">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
                                     {events.map((event) => (
-                                        <tr key={event.id} className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200">
-                                            <td className="px-4 sm:px-6 py-4 font-medium text-gray-900">{event.name}</td>
-                                            <td className="px-4 sm:px-6 py-4 text-gray-600">{format(new Date(event.date), "MM/dd/yyyy")}</td>
-                                            <td className="px-4 sm:px-6 py-4 space-x-2">
+                                        <tr
+                                            key={event.id}
+                                            className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200"
+                                        >
+                                            <td className="px-6 py-4 font-medium text-gray-900">
+                                                {event.name}
+                                            </td>
+                                            <td className="px-6 py-4 text-gray-600">
+                                                {format(new Date(event.date), "MM/dd/yyyy")}
+                                            </td>
+                                            <td className="px-6 py-4 space-x-2">
                                                 <Button
                                                     onClick={() => toggleAttendees(event.id)}
                                                     className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
                                                 >
-                                                    {selectedEvent === event.id && showAttendees ? "Hide Attendees" : "View Attendees"}
+                                                    {selectedEvent === event.id && showAttendees
+                                                        ? "Hide Attendees"
+                                                        : "View Attendees"}
                                                 </Button>
                                                 <Button
                                                     onClick={() => openSectionModal(event)}
@@ -205,13 +339,26 @@ export default function AttendancePage() {
                                                     Scan QR
                                                 </Button>
                                                 <Button
-                                                    onClick={() => { setEditingEvent(event); setFormData({ name: event.name, date: event.date }); setIsEditModalOpen(true); }}
+                                                    onClick={() => {
+                                                        setEditingEvent(event);
+                                                        setFormData({
+                                                            name: event.name,
+                                                            date: event.date,
+                                                            has_morning: event.has_morning ?? false,
+                                                            has_afternoon: event.has_afternoon ?? false,
+                                                            has_night: event.has_night ?? false,
+                                                        });
+                                                        setIsEditModalOpen(true);
+                                                    }}
                                                     className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition"
                                                 >
                                                     ✏️ Edit
                                                 </Button>
                                                 <Button
-                                                    onClick={() => { setDeletingEvent(event); setIsDeleteModalOpen(true); }}
+                                                    onClick={() => {
+                                                        setDeletingEvent(event);
+                                                        setIsDeleteModalOpen(true);
+                                                    }}
                                                     className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
                                                 >
                                                     🗑️ Delete
@@ -222,65 +369,231 @@ export default function AttendancePage() {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* MOBILE Responsive Table to Card */}
+                        <div className="md:hidden space-y-4 p-4">
+                            {events.map((event) => (
+                                <div
+                                    key={event.id}
+                                    className="bg-white p-4 rounded-xl shadow border border-gray-200"
+                                >
+                                    <h3 className="text-lg font-semibold text-gray-900">
+                                        {event.name}
+                                    </h3>
+                                    <p className="text-gray-600 text-sm mb-3">
+                                        {format(new Date(event.date), "MM/dd/yyyy")}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={() => toggleAttendees(event.id)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                                        >
+                                            {selectedEvent === event.id && showAttendees
+                                                ? "Hide Attendees"
+                                                : "View Attendees"}
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => openSectionModal(event)}
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                            Scan QR
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                setEditingEvent(event);
+                                                setFormData({
+                                                    name: event.name,
+                                                    date: event.date,
+                                                    has_morning: event.has_morning ?? false,
+                                                    has_afternoon: event.has_afternoon ?? false,
+                                                    has_night: event.has_night ?? false,
+                                                });
+                                                setIsEditModalOpen(true);
+                                            }}
+                                            className="bg-yellow-500 hover:bg-yellow-600 text-white"
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => {
+                                                setDeletingEvent(event);
+                                                setIsDeleteModalOpen(true);
+                                            }}
+                                            className="bg-red-600 hover:bg-red-700 text-white"
+                                        >
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Attendees Section */}
+                    {/* ATTENDEES tables */}
                     {selectedEvent && (
                         <div className="mt-12">
-                            <h2 className="text-2xl font-bold mb-2">Attendees</h2>
-                            <div className="flex gap-2 mb-2">
+                            <h2 className="text-xl sm:text-2xl font-bold mb-4">Attendees</h2>
+
+                            <div className="flex flex-wrap gap-2 mb-3">
                                 {currentEvent?.has_morning && (
                                     <Button
-                                        variant={selectedSection === 'morning' ? 'default' : 'outline'}
-                                        onClick={() => fetchAttendance(selectedEvent, 'morning')}
+                                        variant={selectedSection === "morning" ? "default" : "outline"}
+                                        onClick={() => fetchAttendance(selectedEvent, "morning")}
                                     >
                                         Morning
                                     </Button>
                                 )}
                                 {currentEvent?.has_afternoon && (
                                     <Button
-                                        variant={selectedSection === 'afternoon' ? 'default' : 'outline'}
-                                        onClick={() => fetchAttendance(selectedEvent, 'afternoon')}
+                                        variant={
+                                            selectedSection === "afternoon" ? "default" : "outline"
+                                        }
+                                        onClick={() => fetchAttendance(selectedEvent, "afternoon")}
                                     >
                                         Afternoon
                                     </Button>
                                 )}
                                 {currentEvent?.has_night && (
                                     <Button
-                                        variant={selectedSection === 'night' ? 'default' : 'outline'}
-                                        onClick={() => fetchAttendance(selectedEvent, 'night')}
+                                        variant={selectedSection === "night" ? "default" : "outline"}
+                                        onClick={() => fetchAttendance(selectedEvent, "night")}
                                     >
                                         Night
                                     </Button>
                                 )}
                             </div>
+
                             {selectedSection && (
-                                <p className="text-gray-700 mb-4">Viewing attendance for: <b>{selectedSection}</b> section</p>
+                                <p className="text-gray-700 mb-4 text-sm sm:text-base">
+                                    Viewing attendance for:{" "}
+                                    <b className="capitalize">{selectedSection}</b> section
+                                </p>
                             )}
+
+                            {/* srch filter controls */}
+                            <div className="flex flex-wrap gap-3 mb-4 items-center">
+                                <Input
+                                    placeholder="Search by name..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="max-w-xs"
+                                />
+
+                                {/* filter by program */}
+                                <Select
+                                    onValueChange={(val) => setFilterProgram(val)}
+                                    value={filterProgram ?? ""}
+                                >
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Filter by Program" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {uniquePrograms.map((program) => (
+                                            <SelectItem key={program} value={program}>
+                                                {program}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                {/* filter by year */}
+                                <Select
+                                    onValueChange={(val) => setFilterYear(val)}
+                                    value={filterYear ?? ""}
+                                >
+                                    <SelectTrigger className="w-[160px]">
+                                        <SelectValue placeholder="Filter by Year" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {uniqueYears.map((year) => (
+                                            <SelectItem key={year} value={year}>
+                                                {year} Year
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button variant="outline" onClick={clearFilters}>
+                                    Clear
+                                </Button>
+                            </div>
+
+
+                            {/* attendees list */}
                             <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-xl overflow-hidden">
-                                <div className="overflow-x-auto">
+                                {/* DESKTOP/TABLET responsiveness */}
+                                <div className="hidden md:block overflow-x-auto">
                                     <table className="min-w-full border-collapse text-sm">
                                         <thead>
                                             <tr className="bg-gradient-to-r from-red-800 to-red-900 text-white">
-                                                <th className="px-4 sm:px-6 py-4 text-left font-semibold">Year</th>
-                                                <th className="px-4 sm:px-6 py-4 text-left font-semibold">Program</th>
-                                                <th className="px-4 sm:px-6 py-4 text-left font-semibold">Name</th>
-                                                <th className="px-4 sm:px-6 py-4 text-left font-semibold">Status</th>
-                                                <th className="px-4 sm:px-6 py-4 text-left font-semibold">Timestamp</th>
+                                                <th className="px-6 py-4 text-left font-semibold">
+                                                    Year
+                                                </th>
+                                                <th className="px-6 py-4 text-left font-semibold">
+                                                    Program
+                                                </th>
+                                                <th className="px-6 py-4 text-left font-semibold">
+                                                    Name
+                                                </th>
+                                                <th className="px-6 py-4 text-left font-semibold">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-4 text-left font-semibold">
+                                                    Timestamp
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white">
-                                            {attendees.map((a) => (
-                                                <tr key={a.id} className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200">
-                                                    <td className="px-4 sm:px-6 py-4 text-gray-800">{a.member?.yearLevel}</td>
-                                                    <td className="px-4 sm:px-6 py-4 text-gray-800">{a.member?.program}</td>
-                                                    <td className="px-4 sm:px-6 py-4 font-medium text-gray-900">{a.member?.lastName}, {a.member?.firstName} {a.member?.middleName}</td>
-                                                    <td className="px-4 sm:px-6 py-4 text-gray-600">{a.status}</td>
-                                                    <td className="px-4 sm:px-6 py-4 text-gray-600">{format(new Date(a.timestamp), "MM/dd/yyyy hh:mm a")}</td>
+                                            {filteredAttendees.map((a) => (
+                                                <tr
+                                                    key={a.id}
+                                                    className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200"
+                                                >
+                                                    <td className="px-6 py-4 text-gray-800">
+                                                        {a.member?.yearLevel}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-800">
+                                                        {a.member?.program}
+                                                    </td>
+                                                    <td className="px-6 py-4 font-medium text-gray-900">
+                                                        {a.member?.lastName}, {a.member?.firstName}{" "}
+                                                        {a.member?.middleName}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600">
+                                                        {a.status}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600">
+                                                        {format(new Date(a.timestamp), "MM/dd/yyyy hh:mm a")}
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* MOBILE responsiveness */}
+                                <div className="md:hidden space-y-3 p-4">
+                                    {filteredAttendees.map((a) => (
+                                        <div
+                                            key={a.id}
+                                            className="bg-white p-4 rounded-lg shadow border border-gray-200 text-sm"
+                                        >
+                                            <p className="font-semibold text-gray-900">
+                                                {a.member?.lastName}, {a.member?.firstName}{" "}
+                                                {a.member?.middleName}
+                                            </p>
+                                            <p className="text-gray-600">
+                                                {a.member?.yearLevel} • {a.member?.program}
+                                            </p>
+                                            <p className="text-gray-700">Status: {a.status}</p>
+                                            <p className="text-gray-500 text-xs">
+                                                {format(new Date(a.timestamp), "MM/dd/yyyy hh:mm a")}
+                                            </p>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -288,7 +601,7 @@ export default function AttendancePage() {
                 </div>
             </section>
 
-            {/* QR Scanner Overlay */}
+            {/* overlay for QR Scanner comp. */}
             {scanning && tempScanEvent && selectedSection && (
                 <QRScanner
                     onScan={handleScan}
@@ -298,7 +611,7 @@ export default function AttendancePage() {
                 />
             )}
 
-            {/* Section selection modal */}
+            {/* select section first */}
             <Dialog open={isSectionModalOpen} onOpenChange={setIsSectionModalOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -312,7 +625,7 @@ export default function AttendancePage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Modals */}
+            {/* modals stuff */}
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogContent>
                     <DialogHeader>

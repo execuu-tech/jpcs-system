@@ -1,6 +1,7 @@
 from ninja import Schema
 from typing import Optional
 from datetime import date, datetime
+from pydantic import EmailStr
 
 
 # ----- Event Schemas -----
@@ -24,9 +25,13 @@ class EventOut(Schema):
 # ----- Member Schema -----
 class MemberOut(Schema):
     id: int
+    studentNumber: str
     firstName: str
+    middleName: str
     lastName: str
-    cspcEmail: str
+    program: str
+    yearLevel: int
+    cspcEmail: EmailStr
 
 
 # ----- Attendance Schemas -----

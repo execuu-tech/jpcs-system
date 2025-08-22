@@ -1,0 +1,3 @@
+﻿"studentNumber,firstName,middleName,lastName,yearLevel,program,isReg,cspcEmail,contactNumber,position,foodRestriction"
+"20210001,John,Doe,Smith,1,BSCS,Regular,john@cspc.edu,09123456789,Member,None"
+"20210002,Jane,Ann,Doe,2,BSIT,Irregular,jane@cspc.edu,09987654321,Officer,Vegetarian"

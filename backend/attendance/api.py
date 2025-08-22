@@ -76,3 +76,22 @@ def event_attendance(request, event_id: int):
     """List attendance for a specific event"""
     return Attendance.objects.filter(event_id=event_id).select_related("member", "event")
 
+@router.get("/member/{member_id}/events", response=List[dict])
+def member_events(request, member_id: int):
+    """
+    Get all events attended by a specific member
+    """
+    member = get_object_or_404(Members, id=member_id)
+    attendances = Attendance.objects.filter(member=member).select_related("event")
+    
+    events = [
+        {
+            "id": a.event.id,
+            "name": a.event.name,
+            "date": a.event.date,
+            "section": a.section,
+            "status": a.status,  # <-- include status here
+        }
+        for a in attendances
+    ]
+    return events
