@@ -41,9 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary',
     'cloudinary_storage',
     'django.contrib.staticfiles',
-    'cloudinary',
     'rest_framework',
     'corsheaders',
     'ninja_extra',
@@ -152,8 +152,8 @@ STATIC_URL = 'static/'
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dcd2e60yf',
-    'API_KEY': '264772871267624',
-    'API_SECRET': 'H0SKemjNBRM63fErMoW6FIfOnng',
+    'API_KEY': '638217388519592',
+    'API_SECRET': '8gSGz75L-HlsMqMtVO4De88NyxM',
 }
 
 
