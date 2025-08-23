@@ -41,13 +41,13 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'rest_framework',
     'corsheaders',
     'ninja_extra',
     'ninja_jwt',
-    'cloudinary',
-    'cloudinary_storage',
     'members',
     'attendance',
 ]
@@ -151,12 +151,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUD_NAME'),
-    'API_KEY': config('API_KEY'),
-    'API_SECRET': config('API_SECRET'),
+    'CLOUD_NAME': 'dcd2e60yf',
+    'API_KEY': '264772871267624',
+    'API_SECRET': 'H0SKemjNBRM63fErMoW6FIfOnng',
 }
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 # Default primary key field type
@@ -172,3 +171,6 @@ NINJA_JWT = {
         days=config("REFRESH_TOKEN_LIFETIME_DAYS", default=7, cast=int)
     ),
 }
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+

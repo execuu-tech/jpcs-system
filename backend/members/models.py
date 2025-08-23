@@ -4,8 +4,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 import string, random, uuid, qrcode
 from io import BytesIO
-from django.core.files import File
-
+from django.core.files.base import ContentFile
 
 def generate_temp_password(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -51,7 +50,7 @@ class Members(models.Model):
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         filename = f"qr_{self.program}_{self.lastName}_{self.firstName}_{self.studentNumber}.png"
-        self.qr_code.save(filename, File(buffer), save=False)
+        self.qr_code.save(filename, ContentFile(buffer.getvalue()), save=False) 
 
     def save(self, *args, **kwargs):
         creating = self._state.adding
