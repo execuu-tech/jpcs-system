@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from decouple import config
+import dj_database_url
 from pathlib import Path
 import datetime
 
@@ -21,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-gl8(3*+#gpentfdn%r3v_x+sm3m#&*u$t@*#e^83&qd=qr=gh)'
+SECRET_KEY = config("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
 
 
 # Application definition
@@ -49,6 +51,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,7 +62,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
+    config("FRONTEND_URL", default="http://localhost:3000"),
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -88,12 +91,10 @@ WSGI_APPLICATION = 'jpcs_backend.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=config("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+    )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -149,6 +150,10 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 NINJA_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(
+        minutes=config("ACCESS_TOKEN_LIFETIME_MINUTES", default=60, cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(
+        days=config("REFRESH_TOKEN_LIFETIME_DAYS", default=7, cast=int)
+    ),
 }
