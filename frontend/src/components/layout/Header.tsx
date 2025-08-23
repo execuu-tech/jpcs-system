@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, Facebook, LogOut } from "lucide-react";
+import { Menu, X, Facebook, LogOut, User } from "lucide-react"; // ✅ added User icon
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
@@ -12,9 +12,8 @@ export default function Header() {
     const [authenticated, setAuthenticated] = useState(false);
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
-    const pathname = usePathname(); // track route changes
+    const pathname = usePathname();
 
-    // Check auth on mount AND whenever route changes
     useEffect(() => {
         setMounted(true);
 
@@ -29,20 +28,20 @@ export default function Header() {
         }
 
         if (mounted) checkAuth();
-    }, [pathname, mounted]); // re-check on route change
+    }, [pathname, mounted]);
 
     const handleLogout = async () => {
         try {
             await fetch("/api/logout", { method: "POST" });
             toast.success("Successfully logged out");
-            router.refresh(); // update auth-dependent UI
-            router.push("/login"); // redirect to login
+            router.refresh();
+            router.push("/login");
         } catch {
             toast.error("Logout failed");
         }
     };
 
-    if (!mounted) return null; // avoid hydration mismatch
+    if (!mounted) return null;
 
     return (
         <header className="fixed top-0 left-0 w-full bg-black/30 text-white backdrop-blur-md border-b border-white/10 shadow z-60">
@@ -58,10 +57,13 @@ export default function Header() {
                         <Link href="/members" className="hover:text-blue-400 transition">Members</Link>
                         <Link href="/attendance" className="hover:text-blue-400 transition">Attendance</Link>
                         <Link href="/about" className="hover:text-blue-400 transition">About</Link>
-                    </nav>
-                    <div className="border-l border-white/20 pl-3 flex items-center space-x-3">
                         <Link href="https://www.facebook.com/cspc.dostsg" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">
                             <Facebook size={20} />
+                        </Link>
+                    </nav>
+                    <div className="border-l border-white/20 pl-3 flex items-center space-x-3">
+                        <Link href="/dashboard" className="flex items-center space-x-1 hover:text-blue-400 transition">
+                            <User size={18} />
                         </Link>
                         <button onClick={handleLogout} className="flex items-center space-x-1 hover:text-red-400 transition">
                             <LogOut size={18} />
@@ -83,13 +85,20 @@ export default function Header() {
                         <Link href="/members" onClick={() => setMenuOpen(false)} className="block">Members</Link>
                         <Link href="/attendance" onClick={() => setMenuOpen(false)} className="block">Attendance</Link>
                         <Link href="/about" onClick={() => setMenuOpen(false)} className="block">About</Link>
-                        <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="block text-left hover:text-red-400 transition">
+                        <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 hover:text-blue-400 transition">
+                            <User size={18} />
+                            <span>Dashboard</span>
+                        </Link>
+                        <button
+                            onClick={() => { handleLogout(); setMenuOpen(false); }}
+                            className="block text-left hover:text-red-400 transition"
+                        >
                             Logout
                         </button>
                     </nav>
 
                     <div className="border-t border-white/20 pt-4">
-                        <Link href="https://www.facebook.com/cspc.dostsg" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 hover:text-blue-400 transition">
+                        <Link href="https://www.facebook.com/jpcscspc" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="flex items-center space-x-2 hover:text-blue-400 transition">
                             <Facebook size={20} />
                             <span>Follow us on Facebook</span>
                         </Link>

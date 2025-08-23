@@ -44,7 +44,6 @@ class Members(models.Model):
     qr_code = models.ImageField(upload_to="qr_codes/", blank=True, null=True)
     temp_password = models.CharField(max_length=128, blank=True, editable=False)
 
-    # 🔑 direct link to auth user
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
 
     def _generate_qr(self) -> None:
@@ -64,11 +63,9 @@ class Members(models.Model):
         return f"{self.program} {self.lastName}, {self.firstName}, {self.middleName} ({self.studentNumber})"
 
 
-# 🔧 sync Members <-> User
 @receiver(post_save, sender=Members)
 def sync_user_with_member(sender, instance, created, **kwargs):
     if created:
-        # Create linked User
         temp_password = generate_temp_password()
         user = User.objects.create_user(
             username=instance.cspcEmail,
@@ -80,14 +77,12 @@ def sync_user_with_member(sender, instance, created, **kwargs):
         instance.user = user
         instance.save(update_fields=["temp_password", "user"])
     else:
-        # Update linked User
         user = instance.user
         if user:
             if user.username != instance.cspcEmail or user.email != instance.cspcEmail:
                 user.username = instance.cspcEmail
                 user.email = instance.cspcEmail
 
-            # Sync groups
             group_name = "OFFICERS" if instance.position == "Officer" else "MEMBERS"
             group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.clear()
@@ -96,7 +91,6 @@ def sync_user_with_member(sender, instance, created, **kwargs):
             user.save()
 
 
-# 🔥 cleanup on delete
 @receiver(post_delete, sender=Members)
 def delete_linked_user(sender, instance, **kwargs):
     if instance.user:

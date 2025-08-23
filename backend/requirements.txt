@@ -6,8 +6,10 @@ charset-normalizer==3.4.3
 colorama==0.4.6
 contextlib2==21.6.0
 cryptography==45.0.6
+diff-match-patch==20241021
 Django==5.2.5
 django-cors-headers==4.7.0
+django-import-export==4.3.9
 django-ninja==1.4.3
 django-ninja-extra==0.30.1
 django-ninja-jwt==5.3.7
@@ -33,6 +35,7 @@ requests==2.32.4
 rich==14.1.0
 segno==1.6.6
 sqlparse==0.5.3
+tablib==3.8.0
 termcolor==3.1.0
 typing-inspection==0.4.1
 typing_extensions==4.14.1

@@ -93,7 +93,6 @@ def sync_user_and_group(member: Members):
         member.user = user
         member.save(update_fields=["temp_password", "user"])
     else:
-        # update email/username if changed
         user = member.user
         if user.username != member.cspcEmail or user.email != member.cspcEmail:
             user.username = member.cspcEmail
@@ -101,7 +100,6 @@ def sync_user_and_group(member: Members):
 
         user.save()
 
-    # sync group
     group_name = "OFFICERS" if member.position == "Officer" else "MEMBERS"
     group, _ = Group.objects.get_or_create(name=group_name)
     member.user.groups.clear()
@@ -122,7 +120,6 @@ def change_password(request, data: PasswordChangeIn):
     if not check_password(data.old_password, user.password):
         return 400, {"message": "Old password is incorrect"}
 
-    # update password safely
     user.set_password(data.new_password)
     user.save()
 
@@ -152,12 +149,11 @@ def update_member(request, member_id: int, data: MemberIn):
 def delete_member(request, member_id: int):
     member = get_object_or_404(Members, id=member_id)
     
-    # Only delete user if it exists
     if hasattr(member, "user") and member.user:
         try:
             member.user.delete()
         except User.DoesNotExist:
-            pass  # User already missing, ignore
+            pass
 
     member.delete()
     return {"success": True}

@@ -1,8 +1,8 @@
 // app/test-auth/page.tsx
+// THIS IS FOR TEST AUTHENTICATION ONLYY REMOVE PAG DEPLOY NA
 import { getToken } from "@/src/lib/auth";
 
 export default async function TestAuthPage() {
-    // This runs server-side
     const token = await getToken();
 
     if (!token) {

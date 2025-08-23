@@ -60,7 +60,6 @@ def create_attendance(request, data: AttendanceIn):
     # prevent double scan
     existing = Attendance.objects.filter(member=member, event=event, section=data.section)
     if existing.exists():
-        # raise an HTTP 400 error
         raise HttpError(400, "Already scanned")
 
     attendance = Attendance.objects.create(
@@ -90,7 +89,7 @@ def member_events(request, member_id: int):
             "name": a.event.name,
             "date": a.event.date,
             "section": a.section,
-            "status": a.status,  # <-- include status here
+            "status": a.status,
         }
         for a in attendances
     ]

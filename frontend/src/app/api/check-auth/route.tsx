@@ -31,7 +31,7 @@ export async function GET() {
                 const data = await refreshRes.json();
 
                 let res = NextResponse.json({ authenticated: true });
-                res = withAuthCookies(res, data.access, refreshToken); // update cookie with new access token
+                res = withAuthCookies(res, data.access, refreshToken);
                 return res;
             }
         }

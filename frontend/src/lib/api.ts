@@ -1,8 +1,8 @@
 // lib/api.ts
 async function handleResponse(res: Response) {
-  const data = await res.json().catch(() => ({})); // parse JSON or fallback
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw { status: res.status, data }; // normalized error
+    throw { status: res.status, data };
   }
   return data;
 }

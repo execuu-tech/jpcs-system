@@ -3,6 +3,6 @@ import { clearAuthCookies } from "@/src/lib/auth";
 
 export async function POST() {
   let res = NextResponse.json({ loggedOut: true });
-  res = clearAuthCookies(res); // remove cookies properly
+  res = clearAuthCookies(res);
   return res;
 }

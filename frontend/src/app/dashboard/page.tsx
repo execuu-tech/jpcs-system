@@ -1,12 +1,11 @@
 "use server"
 
-// Server component
 import { getToken } from "@/src/lib/auth";
 import { redirect } from "next/navigation";
-import DashboardPage from "@/src/components/DashboardPage"; // client component
+import DashboardPage from "@/src/components/DashboardPage";
 
 export default async function Dashboard() {
-    const token = await getToken(); // read cookie server-side
+    const token = await getToken();
 
     if (!token) {
         redirect("/login");
@@ -14,7 +13,7 @@ export default async function Dashboard() {
 
     return (
         <div className="h-[95vh] flex items-center justify-center bg-gray-100">
-            <DashboardPage />  {/* render client-side form only if not logged in */}
+            <DashboardPage />
         </div>
     );
 }

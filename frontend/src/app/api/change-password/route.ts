@@ -11,7 +11,10 @@ export async function POST(request: Request) {
   try {
     const token = await getToken();
     if (!token) {
-      return NextResponse.json({ success: false, message: "Not authenticated" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Not authenticated" },
+        { status: 401 },
+      );
     }
 
     const body = await request.json();
@@ -20,7 +23,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, // ✅ use JWTAuth
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     });
@@ -29,6 +32,9 @@ export async function POST(request: Request) {
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error("Change password error:", err);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 },
+    );
   }
 }

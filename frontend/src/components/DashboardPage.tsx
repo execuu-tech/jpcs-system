@@ -21,7 +21,6 @@ export default function DashboardPage() {
 
         setLoading(true);
         try {
-            // Call your Next.js API route instead of Django directly
             const res = await fetch("/api/change-password", {
                 method: "POST",
                 headers: {
@@ -31,7 +30,7 @@ export default function DashboardPage() {
                     old_password: oldPassword,
                     new_password: newPassword,
                 }),
-                credentials: "include", // ensures cookies are sent
+                credentials: "include",
             });
 
             const data = await res.json();

@@ -6,13 +6,15 @@ const TOKEN_NAME = "auth-token";
 const TOKEN_REFRESH_NAME = "auth-refresh-token";
 
 export async function getToken() {
-    return cookies().get(TOKEN_NAME)?.value;
+    const cookieStore = await cookies();
+    return cookieStore.get(TOKEN_NAME)?.value;
 }
 
+// refresh lasts longer
 export async function getRefreshToken() {
-    return cookies().get(TOKEN_REFRESH_NAME)?.value;
+    const cookieStore = await cookies();
+    return cookieStore.get(TOKEN_REFRESH_NAME)?.value;
 }
-
 export function withAuthCookies(
     res: NextResponse,
     access: string,
@@ -34,7 +36,7 @@ export function withAuthCookies(
         httpOnly: true,
         sameSite: "strict",
         secure: process.env.NODE_ENV !== "development",
-        maxAge: TOKEN_AGE * 24, // refresh lasts longer
+        maxAge: TOKEN_AGE * 24,
         path: "/",
     });
 

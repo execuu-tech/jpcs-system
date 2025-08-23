@@ -38,7 +38,7 @@ class MemberOut(Schema):
 class AttendanceIn(Schema):
     qr_token: str
     event_id: int
-    section: str  # "morning" | "afternoon" | "night"
+    section: str
     status: Optional[str] = "present"
 
 

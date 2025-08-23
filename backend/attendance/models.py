@@ -20,7 +20,7 @@ class Attendance(models.Model):
     section = models.CharField(max_length=20, choices=[('morning','Morning'),('afternoon','Afternoon'),('night','Night')])
 
     class Meta:
-        unique_together = ('member', 'event', 'section')  # prevents double scanning
+        unique_together = ('member', 'event', 'section')
 
     def __str__(self):
         return f"{self.member} - {self.event} ({self.section})"

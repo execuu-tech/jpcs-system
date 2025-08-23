@@ -30,7 +30,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def scan(self, request):
         qr_token = request.data.get("qr_token")
         event_id = request.data.get("event_id")
-        section = request.data.get("section")  # NEW
+        section = request.data.get("section")
 
         if not qr_token or not event_id or not section:
             return Response({"error": "qr_token, event_id, and section are required"},
@@ -46,7 +46,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         except Event.DoesNotExist:
             return Response({"error": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Ensure section is valid for this event
         if section not in ['morning','afternoon','night']:
             return Response({"error": "Invalid section"}, status=status.HTTP_400_BAD_REQUEST)
         if section == 'morning' and not event.has_morning:

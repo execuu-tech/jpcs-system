@@ -24,7 +24,7 @@ export async function POST(request: Request) {
             { loggedIn: true, username },
             { status: 200 }
         );
-        res = withAuthCookies(res, access, refresh); // set cookies properly
+        res = withAuthCookies(res, access, refresh);
 
         return res;
     }

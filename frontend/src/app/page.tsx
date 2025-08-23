@@ -1,17 +1,15 @@
 // src/app/page.tsx
 import { redirect } from "next/navigation";
 import { getToken } from "@/src/lib/auth";
-import HomeContent from "@/src/components/HomeContent"; // move your current JSX to this client component
+import HomeContent from "@/src/components/HomeContent";
 
 
 export default async function HomePage() {
-    const token = await getToken(); // server-side read
+    const token = await getToken();
 
     if (!token) {
-        // No valid token → redirect to login
         redirect("/login");
     }
 
-    // Authenticated → render homepage content
     return <HomeContent />;
 }
