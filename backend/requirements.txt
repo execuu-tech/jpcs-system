@@ -1,8 +1,10 @@
 annotated-types==0.7.0
 asgiref==3.9.1
+Brotli==1.1.0
 certifi==2025.8.3
 cffi==1.17.1
 charset-normalizer==3.4.3
+click==8.2.1
 cloudinary==1.44.1
 colorama==0.4.6
 contextlib2==21.6.0
@@ -22,6 +24,7 @@ dnspython==2.7.0
 email_validator==2.2.0
 fire==0.7.1
 gunicorn==23.0.0
+h11==0.16.0
 idna==3.10
 injector==0.22.0
 markdown-it-py==4.0.0
@@ -50,4 +53,5 @@ typing-inspection==0.4.1
 typing_extensions==4.14.1
 tzdata==2025.2
 urllib3==2.5.0
+uvicorn==0.35.0
 whitenoise==6.9.0
