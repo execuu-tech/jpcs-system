@@ -15,6 +15,8 @@ import dj_database_url
 from pathlib import Path
 import datetime
 
+import cloudinary_storage
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,6 +46,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'ninja_extra',
     'ninja_jwt',
+    'cloudinary',
+    'cloudinary_storage',
     'members',
     'attendance',
 ]
@@ -140,11 +144,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'
+# ENABLE MEDIA ROOT FOR DEVELOPMENT
 
 STATIC_URL = 'static/'
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUD_NAME'),
+    'API_KEY': config('API_KEY'),
+    'API_SECRET': config('API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 # Default primary key field type
