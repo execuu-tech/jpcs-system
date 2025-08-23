@@ -1,16 +1,26 @@
-from ninja import Router, File
+from ninja import Router, File 
 from ninja.files import UploadedFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.models import User, Group
+from django.contrib.auth.hashers import check_password
 from .models import Members, generate_temp_password
-from .schemas import MemberIn, MemberOut
+from .schemas import MemberIn, MemberOut, PasswordChangeIn, PasswordChangeResponse
 from .helpers import serialize_member
 
 import csv
 from io import TextIOWrapper
 
+from ninja_jwt.authentication import JWTAuth
+import helpers
+
 router = Router(tags=["Members"])
+
+@router.get("/", response=list[MemberOut], auth=helpers.api_auth_user_or_annon)
+def list_members(request):
+    members = Members.objects.all()
+    return [serialize_member(m) for m in members]
+
 
 @router.post("/import-mem-csv")
 def import_mem_csv(request, file: UploadedFile = File(...)):
@@ -98,10 +108,25 @@ def sync_user_and_group(member: Members):
     member.user.groups.add(group)
 
 
-@router.get("/", response=list[MemberOut])
-def list_members(request):
-    members = Members.objects.all()
-    return [serialize_member(m) for m in members]
+@router.post(
+    "/change-password",
+    response={200: PasswordChangeResponse, 400: PasswordChangeResponse, 401: PasswordChangeResponse},
+    auth=JWTAuth(),
+)
+def change_password(request, data: PasswordChangeIn):
+    user: User = request.user
+
+    if not user.is_authenticated:
+        return 401, {"message": "Authentication required"}
+
+    if not check_password(data.old_password, user.password):
+        return 400, {"message": "Old password is incorrect"}
+
+    # update password safely
+    user.set_password(data.new_password)
+    user.save()
+
+    return 200, {"message": "Password updated successfully"}
 
 @router.get("/{member_id}", response=MemberOut)
 def get_member(request, member_id: int):

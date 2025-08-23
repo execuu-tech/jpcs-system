@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
-import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
+import { apiGet, apiPost, apiPut, apiDelete } from "@/src/lib/api";
 
 interface Event {
     id: number;

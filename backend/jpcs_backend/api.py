@@ -1,4 +1,4 @@
-from ninja import NinjaAPI, Schema
+from ninja import Schema
 
 from ninja_extra import NinjaExtraAPI
 from ninja_jwt.authentication import JWTAuth
@@ -14,10 +14,12 @@ api.add_router("/attendance/", attendance_router)
 
 api.register_controllers(NinjaJWTDefaultController)
 
+
 class UserSchema(Schema):
     username: str
     is_authenticated: bool
     email: str
+
 
 @api.get("/me", response=UserSchema, auth=JWTAuth())
 def me(request):

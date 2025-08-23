@@ -43,3 +43,11 @@ class MemberOut(Schema):
         if obj.qr_code:
             data.qr_code = f"http://localhost:8080{obj.qr_code.url}"
         return data
+
+
+class PasswordChangeIn(Schema):
+    old_password: str
+    new_password: str
+
+class PasswordChangeResponse(Schema):
+    message: str

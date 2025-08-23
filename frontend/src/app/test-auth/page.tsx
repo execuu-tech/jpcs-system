@@ -1,9 +1,9 @@
 // app/test-auth/page.tsx
-import { getToken } from "@/lib/auth";
+import { getToken } from "@/src/lib/auth";
 
-export default function TestAuthPage() {
+export default async function TestAuthPage() {
     // This runs server-side
-    const token = getToken();
+    const token = await getToken();
 
     if (!token) {
         return <div style={{ padding: 20 }}>Error: Not authenticated</div>;
