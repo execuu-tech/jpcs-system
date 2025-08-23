@@ -23,11 +23,25 @@ export default function QRScanner({ onScan, onClose, eventName, section }: QRSca
         const codeReader = new BrowserMultiFormatReader();
         codeReaderRef.current = codeReader;
 
+        // Check camera permission before trying
+        if (navigator.permissions) {
+            navigator.permissions
+                .query({ name: "camera" as PermissionName })
+                .then((res) => {
+                    if (res.state === "denied") {
+                        setError("Camera access denied. Please allow it in browser settings.");
+                    }
+                })
+                .catch(() => {
+                    // Not all browsers support Permissions API
+                });
+        }
+
         if (isMobile) {
             if (videoRef.current) {
                 codeReader
                     .decodeFromVideoDevice(
-                        { facingMode: { exact: "environment" } },
+                        { facingMode: "environment" }, // use "ideal" environment camera
                         videoRef.current,
                         (result, err) => {
                             if (result) onScan(result.getText());
@@ -36,7 +50,21 @@ export default function QRScanner({ onScan, onClose, eventName, section }: QRSca
                             }
                         }
                     )
-                    .catch(() => setError("Unable to access rear camera"));
+                    .catch(() => {
+                        // fallback: try default camera
+                        codeReader
+                            .decodeFromVideoDevice(
+                                undefined,
+                                videoRef.current!,
+                                (result, err) => {
+                                    if (result) onScan(result.getText());
+                                    if (err && !(err instanceof NotFoundException)) {
+                                        setError("Scanning error: " + err.message);
+                                    }
+                                }
+                            )
+                            .catch(() => setError("Unable to access camera. Please allow permissions."));
+                    });
             }
         } else {
             codeReader.listVideoInputDevices().then((videoDevices) => {
@@ -102,6 +130,7 @@ export default function QRScanner({ onScan, onClose, eventName, section }: QRSca
                 className="w-full max-w-md rounded-lg border-4 border-white shadow-lg"
                 autoPlay
                 muted
+                playsInline
             />
 
             {error && <p className="text-red-500 mt-2">{error}</p>}
