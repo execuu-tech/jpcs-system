@@ -15,7 +15,9 @@ import dj_database_url
 from pathlib import Path
 import datetime
 
+import cloudinary
 import cloudinary_storage
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,9 +30,10 @@ SECRET_KEY = config("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
+# Default to localhost, override in Render environment
+SITE_DOMAIN = os.getenv("SITE_DOMAIN", "http://127.0.0.1:8000")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="*").split(",")
-
 
 # Application definition
 
@@ -121,16 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# JWT AUTH TOKEN 
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': [],
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.AllowAny',
-#     ],
-# }
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -151,12 +144,16 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dcd2e60yf',
-    'API_KEY': '638217388519592',
-    'API_SECRET': '8gSGz75L-HlsMqMtVO4De88NyxM',
+    'CLOUD_NAME': os.getenv('CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUD_API_KEY'),
+    'API_SECRET': os.getenv('CLOUD_API_SECRET'),
 }
 
-
+cloudinary.config(
+  cloud_name=os.getenv('CLOUD_NAME'),
+  api_key=os.getenv('CLOUD_API_KEY'),
+  api_secret=os.getenv('CLOUD_API_SECRET')
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
