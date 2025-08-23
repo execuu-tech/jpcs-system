@@ -19,6 +19,11 @@ def list_events(request):
 @router.post("/events", response=EventOut)
 def create_event(request, data: EventIn):
     """Create a new event"""
+
+    # Ensure at least one section is selected
+    if not (data.has_morning or data.has_afternoon or data.has_night):
+        raise HttpError(400, "You must select at least one section (morning, afternoon, or night).")
+
     return Event.objects.create(**data.dict())
 
 @router.get("/events/{event_id}", response=EventOut)

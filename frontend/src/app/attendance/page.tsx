@@ -177,7 +177,16 @@ export default function AttendancePage() {
     };
 
     const handleAddEvent = async () => {
-        if (!formData.name || !formData.date) return;
+        if (!formData.name || !formData.date) {
+            toast.error("Event name and date are required");
+            return;
+        }
+
+        if (!formData.has_morning && !formData.has_afternoon && !formData.has_night) {
+            toast.error("Please select at least one section");
+            return;
+        }
+
         try {
             const newEvent = await apiPost("/attendance/events", formData);
             setEvents((prev) => [...prev, newEvent]);
