@@ -39,6 +39,7 @@ pydantic_core==2.33.2
 Pygments==2.19.2
 PyJWT==2.10.1
 python-decouple==3.8
+python-dotenv==1.1.1
 PyYAML==6.0.2
 qrcode==8.2
 rav==0.0.9

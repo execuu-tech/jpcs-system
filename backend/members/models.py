@@ -4,11 +4,11 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 import string, random, uuid, qrcode
 from io import BytesIO
+from cloudinary.models import CloudinaryField
 from django.core.files.base import ContentFile
 
 def generate_temp_password(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
-
 
 class Members(models.Model):
     PROGRAM_CHOICES = (
@@ -40,7 +40,7 @@ class Members(models.Model):
     foodRestriction = models.CharField(max_length=50, blank=True, editable=True)
     created_at = models.DateTimeField(auto_now_add=True)
     qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    qr_code = models.ImageField(upload_to="qr_codes/", blank=True, null=True)
+    qr_code = CloudinaryField('qr_code', blank=True, null=True)
     temp_password = models.CharField(max_length=128, blank=True, editable=False)
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -50,7 +50,7 @@ class Members(models.Model):
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         filename = f"qr_{self.program}_{self.lastName}_{self.firstName}_{self.studentNumber}.png"
-        self.qr_code.save(filename, ContentFile(buffer.getvalue()), save=False) 
+        self.qr_code.save(filename, ContentFile(buffer.getvalue()), save=False)
 
     def save(self, *args, **kwargs):
         creating = self._state.adding
@@ -61,7 +61,7 @@ class Members(models.Model):
     def __str__(self):
         return f"{self.program} {self.lastName}, {self.firstName}, {self.middleName} ({self.studentNumber})"
 
-
+# Signals remain unchanged
 @receiver(post_save, sender=Members)
 def sync_user_with_member(sender, instance, created, **kwargs):
     if created:
@@ -88,7 +88,6 @@ def sync_user_with_member(sender, instance, created, **kwargs):
             user.groups.add(group)
 
             user.save()
-
 
 @receiver(post_delete, sender=Members)
 def delete_linked_user(sender, instance, **kwargs):

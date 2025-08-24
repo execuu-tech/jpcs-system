@@ -32,6 +32,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', api.urls),
     path('health/', lambda r: __import__('django.http').http.HttpResponse('ok')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
+]
 

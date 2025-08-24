@@ -141,19 +141,11 @@ USE_TZ = True
 # MEDIA_ROOT = BASE_DIR / 'media'
 # ENABLE MEDIA ROOT FOR DEVELOPMENT
 
-STATIC_URL = 'static/'
-
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUD_NAME'),
-    'API_KEY': os.getenv('CLOUD_API_KEY'),
-    'API_SECRET': os.getenv('CLOUD_API_SECRET'),
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
 }
-
-cloudinary.config(
-  cloud_name=os.getenv('CLOUD_NAME'),
-  api_key=os.getenv('CLOUD_API_KEY'),
-  api_secret=os.getenv('CLOUD_API_SECRET')
-)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
