@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 
+import Calendar from "@/src/components/Calendar"
+
 export default function HomeContent() {
     return (
         <main className="flex flex-col min-h-screen">
@@ -54,6 +56,20 @@ export default function HomeContent() {
                     </div>
                 </div>
             </section>
+
+            {/* Calendar Section */}
+            <section className="bg-gray-50 text-gray-800 px-4 sm:px-6 lg:px-8 py-16">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold mb-4">Important Dates & Reminders</h2>
+                        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                            Stay on top of the latest events and activities of the Junior Philippine Computer Society - CSPC Chapter
+                        </p>
+                    </div>
+                    <Calendar />
+                </div>
+            </section>
+
         </main>
     );
 }

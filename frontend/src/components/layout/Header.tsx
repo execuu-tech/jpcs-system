@@ -45,10 +45,10 @@ export default function Header() {
 
     return (
         <header className="fixed top-0 left-0 w-full bg-black/30 text-white backdrop-blur-md border-b border-white/10 shadow z-60">
-            <Toaster position="top-right" />
+            <Toaster position="top-center" />
             <div className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
                 <Link href="/" className="flex items-center">
-                    <Image src="/JPCS-logo.jpg" alt="Logo" width={32} height={32} />
+                    <Image src="/JPCS-logo.png" alt="Logo" width={32} height={32} />
                     <span className="ml-2 text-xl font-bold">JPCS - CSPC Chapter</span>
                 </Link>
 
