@@ -19,6 +19,7 @@ class MemberIn(Schema):
     foodRestriction: Optional[str] = None
 
 
+
 class MemberOut(Schema):
     id: int
     studentNumber: str
@@ -40,9 +41,12 @@ class MemberOut(Schema):
     @classmethod
     def from_orm(cls, obj):
         data = super().from_orm(obj)
+        # Ensure qr_code is always a string URL if present
         if obj.qr_code:
-            data.qr_code = f"http://localhost:8080{obj.qr_code.url}"
+            # Cloudinary's url is already full https:// URL
+            data.qr_code = str(obj.qr_code.url)
         return data
+
 
 
 class PasswordChangeIn(Schema):
