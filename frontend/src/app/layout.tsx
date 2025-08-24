@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+import { Analytics } from "@vercel/analytics/next"
+
 import ParallaxWrapper from "@/src/components/ParallaxWrapper";
 import Header from "@/src/components/layout/Header";
 import Footer from "@/src/components/layout/Footer";
@@ -38,6 +40,7 @@ export default function RootLayout({
                         <Toaster position="top-center" reverseOrder={false} />
                     </main>
                     <Footer />
+                    <Analytics />
                 </ParallaxWrapper>
             </body>
         </html>
