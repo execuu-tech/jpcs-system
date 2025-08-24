@@ -4,11 +4,12 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 import string, random, uuid, qrcode
 from io import BytesIO
+import cloudinary.uploader
 from cloudinary.models import CloudinaryField
-from django.core.files.base import ContentFile
 
 def generate_temp_password(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
 
 class Members(models.Model):
     PROGRAM_CHOICES = (
@@ -45,12 +46,23 @@ class Members(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
 
-    def _generate_qr(self) -> None:
+    def _generate_qr(self):
+        # Generate QR code as PNG in memory
         img = qrcode.make(str(self.qr_token))
         buffer = BytesIO()
-        img.save(buffer, format="PNG")
-        filename = f"qr_{self.program}_{self.lastName}_{self.firstName}_{self.studentNumber}.png"
-        self.qr_code.save(filename, ContentFile(buffer.getvalue()), save=False)
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+
+        # Upload directly to Cloudinary
+        result = cloudinary.uploader.upload(
+            buffer,
+            folder="qr_codes",
+            public_id=f"qr_{self.program}_{self.lastName}_{self.firstName}_{self.studentNumber}",
+            overwrite=True,
+            resource_type="image"
+        )
+        # Store the Cloudinary public_id in the field
+        self.qr_code = result['public_id']
 
     def save(self, *args, **kwargs):
         creating = self._state.adding
@@ -61,7 +73,8 @@ class Members(models.Model):
     def __str__(self):
         return f"{self.program} {self.lastName}, {self.firstName}, {self.middleName} ({self.studentNumber})"
 
-# Signals remain unchanged
+
+# Signals
 @receiver(post_save, sender=Members)
 def sync_user_with_member(sender, instance, created, **kwargs):
     if created:
@@ -88,6 +101,7 @@ def sync_user_with_member(sender, instance, created, **kwargs):
             user.groups.add(group)
 
             user.save()
+
 
 @receiver(post_delete, sender=Members)
 def delete_linked_user(sender, instance, **kwargs):
