@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import EmailStr
 from django.conf import settings
 
+
 class MemberIn(Schema):
     studentNumber: str
     firstName: str
@@ -12,12 +13,12 @@ class MemberIn(Schema):
     lastName: str
     yearLevel: int
     program: str
+    block: str
     isReg: str
     cspcEmail: EmailStr
     contactNumber: Optional[str] = None
     position: str
     foodRestriction: Optional[str] = None
-
 
 
 class MemberOut(Schema):
@@ -28,6 +29,7 @@ class MemberOut(Schema):
     lastName: str
     yearLevel: int
     program: str
+    block: str
     isReg: str
     cspcEmail: EmailStr
     contactNumber: Optional[str] = None
@@ -48,10 +50,10 @@ class MemberOut(Schema):
         return data
 
 
-
 class PasswordChangeIn(Schema):
     old_password: str
     new_password: str
+
 
 class PasswordChangeResponse(Schema):
     message: str

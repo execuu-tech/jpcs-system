@@ -7,8 +7,9 @@ from io import BytesIO
 import cloudinary.uploader
 from cloudinary.models import CloudinaryField
 
+
 def generate_temp_password(length=8):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 class Members(models.Model):
@@ -16,7 +17,10 @@ class Members(models.Model):
         ("BSCS", "BS in Computer Science"),
         ("BSIT", "BS in Information Technology"),
         ("BSIS", "BS in Information Systems"),
+        ("BLIS", "BS in Library and Information Science"),
     )
+
+    blockS = [(chr(i), chr(i)) for i in range(ord("A"), ord("Z") + 1)]
 
     POSITION_CHOICES = (
         ("Officer", "Officer"),
@@ -34,14 +38,26 @@ class Members(models.Model):
     lastName = models.CharField(max_length=50)
     yearLevel = models.IntegerField(choices=[(i, str(i)) for i in range(1, 5)])
     program = models.CharField(max_length=4, choices=PROGRAM_CHOICES)
-    isReg = models.CharField(max_length=9, choices=IS_REGULAR, default="Regular", editable=True)
+    block = models.CharField(
+        max_length=1,
+        choices=blockS,
+        default=None,
+        blank=True,
+        editable=True,
+        null=True,
+    )
+    isReg = models.CharField(
+        max_length=9, choices=IS_REGULAR, default="Regular", editable=True
+    )
     cspcEmail = models.EmailField(max_length=254, unique=True)
     contactNumber = models.CharField(max_length=11, blank=True)
-    position = models.CharField(max_length=10, choices=POSITION_CHOICES, default="Member", editable=True)
+    position = models.CharField(
+        max_length=10, choices=POSITION_CHOICES, default="Member", editable=True
+    )
     foodRestriction = models.CharField(max_length=50, blank=True, editable=True)
     created_at = models.DateTimeField(auto_now_add=True)
     qr_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    qr_code = CloudinaryField('qr_code', blank=True, null=True)
+    qr_code = CloudinaryField("qr_code", blank=True, null=True)
     temp_password = models.CharField(max_length=128, blank=True, editable=False)
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
@@ -50,19 +66,19 @@ class Members(models.Model):
         # Generate QR code as PNG in memory
         img = qrcode.make(str(self.qr_token))
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format="PNG")
         buffer.seek(0)
 
         # Upload directly to Cloudinary
         result = cloudinary.uploader.upload(
             buffer,
             folder="qr_codes",
-            public_id=f"qr_{self.program}_{self.lastName}_{self.firstName}_{self.studentNumber}",
+            public_id=f"qr_{self.program} {self.yearLevel}{self.block}_{self.lastName}_{self.firstName}_{self.studentNumber}",
             overwrite=True,
-            resource_type="image"
+            resource_type="image",
         )
         # Store the Cloudinary public_id in the field
-        self.qr_code = result['public_id']
+        self.qr_code = result["public_id"]
 
     def save(self, *args, **kwargs):
         creating = self._state.adding
@@ -71,7 +87,7 @@ class Members(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.program} {self.lastName}, {self.firstName}, {self.middleName} ({self.studentNumber})"
+        return f"{self.program} {self.yearLevel}{self.block} {self.lastName}, {self.firstName}, {self.middleName} ({self.studentNumber})"
 
 
 # Signals

@@ -15,12 +15,13 @@ class MembersResource(resources.ModelResource):
             "lastName",
             "yearLevel",
             "program",
+            "block",
             "isReg",
             "cspcEmail",
             "contactNumber",
             "position",
             "foodRestriction",
-            "temp_password", 
+            "temp_password",
         )
         import_id_fields = ("studentNumber",)
 
@@ -39,12 +40,13 @@ class MembersAdmin(ImportExportModelAdmin):
         "lastName",
         "yearLevel",
         "program",
+        "block",
         "cspcEmail",
         "contactNumber",
         "position",
         "temp_password",
     )
     search_fields = ("studentNumber", "firstName", "lastName", "cspcEmail")
-    list_filter = ("program", "yearLevel", "position")
+    list_filter = ("program", "yearLevel", "block", "position")
     ordering = ("lastName", "firstName")
     readonly_fields = ("qr_code",)

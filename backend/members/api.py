@@ -1,4 +1,4 @@
-from ninja import Router, File 
+from ninja import Router, File
 from ninja.files import UploadedFile
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -16,6 +16,7 @@ import helpers
 
 router = Router(tags=["Members"])
 
+
 @router.get("/", response=list[MemberOut], auth=helpers.api_auth_user_or_annon)
 def list_members(request):
     members = Members.objects.all()
@@ -27,7 +28,7 @@ def import_mem_csv(request, file: UploadedFile = File(...)):
     """
     Import members via .csv file.
     """
-    
+
     text_file = TextIOWrapper(file.file, encoding="utf-8")
     reader = csv.DictReader(text_file)
 
@@ -50,15 +51,13 @@ def import_mem_csv(request, file: UploadedFile = File(...)):
                         "lastName": row.get("lastName", ""),
                         "yearLevel": row.get("yearLevel", ""),
                         "program": row.get("program", ""),
-
+                        "block": row.get("section", ""),
                         "isReg": row.get("isReg", ""),
-
                         "cspcEmail": row.get("cspcEmail", ""),
                         "contactNumber": row.get("contactNumber", ""),
                         "position": row.get("position", ""),
-
                         "foodRestriction": row.get("foodRestriction", ""),
-                    }
+                    },
                 )
                 sync_user_and_group(member)
 
@@ -75,6 +74,7 @@ def import_mem_csv(request, file: UploadedFile = File(...)):
         "updated": updated,
         "errors": errors,
     }
+
 
 def sync_user_and_group(member: Members):
     """
@@ -108,7 +108,11 @@ def sync_user_and_group(member: Members):
 
 @router.post(
     "/change-password",
-    response={200: PasswordChangeResponse, 400: PasswordChangeResponse, 401: PasswordChangeResponse},
+    response={
+        200: PasswordChangeResponse,
+        400: PasswordChangeResponse,
+        401: PasswordChangeResponse,
+    },
     auth=JWTAuth(),
 )
 def change_password(request, data: PasswordChangeIn):
@@ -125,16 +129,19 @@ def change_password(request, data: PasswordChangeIn):
 
     return 200, {"message": "Password updated successfully"}
 
+
 @router.get("/{member_id}", response=MemberOut)
 def get_member(request, member_id: int):
     member = get_object_or_404(Members, id=member_id)
     return serialize_member(member)
+
 
 @router.post("/", response=MemberOut)
 def create_member(request, data: MemberIn):
     member = Members.objects.create(**data.dict())
     sync_user_and_group(member)
     return serialize_member(member)
+
 
 @router.put("/{member_id}", response=MemberOut)
 def update_member(request, member_id: int, data: MemberIn):
@@ -145,10 +152,11 @@ def update_member(request, member_id: int, data: MemberIn):
     sync_user_and_group(member)
     return serialize_member(member)
 
+
 @router.delete("/{member_id}")
 def delete_member(request, member_id: int):
     member = get_object_or_404(Members, id=member_id)
-    
+
     if hasattr(member, "user") and member.user:
         try:
             member.user.delete()

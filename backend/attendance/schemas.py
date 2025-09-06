@@ -30,6 +30,7 @@ class MemberOut(Schema):
     middleName: str
     lastName: str
     program: str
+    block: str
     yearLevel: int
     cspcEmail: EmailStr
 
